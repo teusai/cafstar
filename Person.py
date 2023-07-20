@@ -1,10 +1,14 @@
 import pyglet
+import parseCSV
 import math
+import re
 
 
 class Person(pyglet.sprite.Sprite):
     def __init__(self, filename, *args, **kwargs):
         img = self.__get_img(filename)
+        info = self.__get_person_info(filename)
+        print(info)
         super().__init__(img, *args, **kwargs)
         self.vx = 0
         self.vy = 0
@@ -16,6 +20,12 @@ class Person(pyglet.sprite.Sprite):
         img.anchor_x = img.width // 2
         img.anchor_y = img.height // 2
         return img
+
+    def __get_person_info(self, filename):
+       """Returns a dict of info for the respective person"""
+       id = int(re.search(r'\d{6}', filename).group(0))
+       info = parseCSV.csvGetRow(id)
+       return info
 
     def update(self, vx=None, vy=None, *args, **kwargs):
         self.vx = vx if vx else self.vx
