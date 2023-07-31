@@ -12,3 +12,14 @@ def csvGetRow(n):
         return reader.__next__()
 
 
+def readInfo(filename):
+    peopleInfo = ([], [], [], [], [], [])
+
+    with open(filename, newline='') as csvFile:
+        reader = csv.DictReader(csvFile, delimiter=',')
+        for d in reader:
+            peopleInfo[int(d['Category ID'])-1].append(d)
+
+    return peopleInfo
+
+# print(readInfo('assets/people-info-id-ordered.csv'))
