@@ -27,12 +27,13 @@ catchAnim = pyglet.image.Animation.from_image_sequence(
     duration=0.1
 )
 
-backgroundPlayer = pyglet.media.Player()
-backgroundPlayer.loop = True
-background = pyglet.media.load('assets/' + config['backgroundfilename'])
-backgroundPlayer.queue(background)
-print(backgroundPlayer.source)
-print(f'FFMPEG? {pyglet.media.have_ffmpeg()}')
+# backgroundPlayer = pyglet.media.Player()
+# backgroundPlayer.loop = True
+# background = pyglet.media.load('assets/' + config['backgroundfilename'])
+# backgroundPlayer.queue(background)
+# print(backgroundPlayer.source)
+# print(f'FFMPEG? {pyglet.media.have_ffmpeg()}')
+bg = pyglet.resource.image("assets/" + config['backgroundfilename'])
 
 discRadius = config['disctowindowratio'] * config['windowwidth'] * 0.5
 
@@ -97,9 +98,10 @@ def gameLoop(dt):
 
     # print("game looping")
     # backgroundImage.blit(0, 0)
-    if backgroundPlayer.source and backgroundPlayer.source.video_format:
-        print('video exists and stuff')
-        backgroundPlayer.texture.blit(0,0)
+    # if backgroundPlayer.source and backgroundPlayer.source.video_format:
+    #     print('video exists and stuff')
+    #     backgroundPlayer.texture.blit(0,0)
+    bg.blit(0,0)
     for area in catchAreas:
         area.draw()
     
@@ -141,8 +143,8 @@ def gameEnd(dt):
 
 def gameWait(dt):
     global remainingTime
-    # backgroundImage.blit(0,0)
     window.clear()
+    bg.blit(0,0)
     scores = (currentScore, dayHighScore, conferenceHighScore)
     drawTable.drawGameOver(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores)
     remainingTime -= dt
