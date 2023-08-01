@@ -16,9 +16,10 @@ class Person(pyglet.sprite.Sprite):
         self.rotSpeed = random.uniform(10.0, 60.0) * (-1 if random.randint(0, 1) == 1 else 1)
         self.scale = random.randint(8, 12) / 100.0
 
-        self.timeLimit = random.uniform(20, 30)
+        self.timeLimit = 10
         self.timeUp = False
-        self.catchable = True
+        self.caught = False
+        self.pauseTime = 3
     
     def setHandler(self, handler):
         self.handler = handler
@@ -60,6 +61,12 @@ class Person(pyglet.sprite.Sprite):
 
     def step(self, dt):
         """Updates the Person's coordinates based on velocity and deltatime"""
+        if self.caught:
+            self.pause(dt)
+            return
+        if self.timeUp:
+            self.fadeout(dt)
+            return
 
         self.x += self.vx * dt
         self.y += self.vy * dt
@@ -68,15 +75,19 @@ class Person(pyglet.sprite.Sprite):
         self.timeLimit -= dt
         self.timeUp = self.timeLimit <= 0
 
-        if self.timeUp:
+    def pause(self, dt):
+        """Sub-function of step for waiting afte the person is caught to fadeout"""
+        if self.pauseTime <= 0:
             self.fadeout(dt)
+            return
+        self.pauseTime -= dt
 
     def fadeout(self, dt):
         """Sub-function of self.step that handles fading out before despawing"""
         if self.opacity < 0.01:
             self.despawn()
             return
-        self.opacity *= (1 - dt) * 0.9
+        self.opacity *= (1 - dt) * 0.95
 
     def bounce(self, normal):
         """Changes the Person's velocity by reflecting based on a normal vector"""

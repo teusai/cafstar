@@ -7,25 +7,40 @@ from person.personUtils import randomizePerson
 from utils.readConfig import readConfig
 from utils.readInfo import readInfo
 from utils.readCategories import readCategories
-from utils.drawScoreboard import drawScoreboard
-from utils.drawEndScreen import drawEndScreen
+import utils.drawTable as drawTable
+import highscores
 
 import gc
+import os
+
 
 config = readConfig('cafstar.cfg')
 peopleInfo = readInfo('assets/people-info-id-ordered.csv')
 categories = readCategories('assets/categories.csv')
 peopleImageURLS = sorted(glob.glob('assets/people/*.png'))
 numTotalPeople = len(peopleImageURLS)
-print(peopleImageURLS)
-backgroundImage = pyglet.resource.image('assets/' + config['backgroundfilename'])
+catchAnim = pyglet.image.Animation.from_image_sequence(
+    pyglet.image.ImageGrid(
+        pyglet.resource.image("resources/anim_star1_6x6_255sq_00000.png"),
+        rows=6, columns=6
+    ),
+    duration=0.1
+)
 
+backgroundPlayer = pyglet.media.Player()
+backgroundPlayer.loop = True
+background = pyglet.media.load('assets/' + config['backgroundfilename'])
+backgroundPlayer.queue(background)
+print(backgroundPlayer.source)
+print(f'FFMPEG? {pyglet.media.have_ffmpeg()}')
+
+discRadius = config['disctowindowratio'] * config['windowwidth'] * 0.5
 
 
 window = pyglet.window.Window(width=config['windowwidth'], height=config['windowheight'])
 pyglet.gl.glClearColor(0.3, 0.3, 0.3, 1)
 
-catcher = pyglet.shapes.Circle(0, 0, radius=90)
+catcher = pyglet.shapes.Circle(0, 0, radius=discRadius)
 
 @window.event
 def on_mouse_motion(x, y, dx, dy):
@@ -37,16 +52,18 @@ def on_mouse_motion(x, y, dx, dy):
 activePeople = []
 usedPeople = set()
 peopleBatch = pyglet.graphics.Batch()
-highScore = 0
+dayHighScore = 0
+conferenceHighScore = 0
 currentScore = 0
 activeCategory = 1
-catchAreas = [pyglet.shapes.Circle(x=400, y=300, radius=100), catcher]
+catchAreas = [pyglet.shapes.Circle(x=400, y=300, radius=discRadius), catcher]
 remainingTime = config['gametimelimit']
 
 
 def gameReset(dt):
     pyglet.clock.unschedule(gameWait)
-    global activePeople, usedPeople, currentScore, remainingTime, peopleBatch
+    # backgroundPlayer.play()
+    global activePeople, usedPeople, currentScore, dayHighScore, conferenceHighScore, remainingTime, peopleBatch
     for p in activePeople:
         p.despawn()
     del activePeople
@@ -56,6 +73,7 @@ def gameReset(dt):
     usedPeople = set()
     peopleBatch = pyglet.graphics.Batch()
     currentScore = 0
+    dayHighScore, conferenceHighScore = highscores.getHighScores()
     remainingTime = config['gametimelimit']
 
     print(gc.get_count())
@@ -70,6 +88,7 @@ def gameReset(dt):
 
 
 def gameLoop(dt):
+    window.clear()
     global remainingTime, currentScore
 
     if remainingTime < 0:
@@ -78,28 +97,33 @@ def gameLoop(dt):
 
     # print("game looping")
     # backgroundImage.blit(0, 0)
-    window.clear()
+    if backgroundPlayer.source and backgroundPlayer.source.video_format:
+        print('video exists and stuff')
+        backgroundPlayer.texture.blit(0,0)
     for area in catchAreas:
         area.draw()
-    drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], currentScore, remainingTime, categories[activeCategory-1])
+    
     peopleBatch.draw()
+    scores = (currentScore, dayHighScore, conferenceHighScore)
+    drawTable.drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1])
 
     caughtPeople = catchPeople(activePeople, catchAreas)
     if caughtPeople:
         print(caughtPeople)
         for p in caughtPeople:
             p.timeLimit = 0
-            p.catchable = False
+            p.caught = True
             if p.category == activeCategory:
+                startCatchAnim(p)
                 currentScore += 1
                 pickActiveCategory()
 
 
     for person in activePeople:
-        bounding = person.outOfBounds(config['windowwidth'], config['windowheight'])
-        if bounding:
-            if person.vx * bounding[0] < 0 or person.vy * bounding[1] < 0:
-                person.bounce(bounding)
+        # bounding = person.outOfBounds(config['windowwidth'], config['windowheight'])
+        # if bounding:
+        #     if person.vx * bounding[0] < 0 or person.vy * bounding[1] < 0:
+        #         person.bounce(bounding)
         person.step(dt)
     
     
@@ -109,6 +133,7 @@ def gameLoop(dt):
 def gameEnd(dt):
     pyglet.clock.unschedule(gameLoop)
     pyglet.clock.unschedule(spawnPerson)
+    highscores.logHighScore(currentScore)
     global remainingTime
     remainingTime = config['gamewaittime']
     pyglet.clock.schedule_interval(gameWait, config['framerate'])
@@ -118,7 +143,8 @@ def gameWait(dt):
     global remainingTime
     # backgroundImage.blit(0,0)
     window.clear()
-    drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], currentScore, remainingTime, categories[activeCategory-1])
+    scores = (currentScore, dayHighScore, conferenceHighScore)
+    drawTable.drawGameOver(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores)
     remainingTime -= dt
 
 
@@ -138,7 +164,7 @@ def spawnPerson(dt):
         personInfo = peopleInfo[categoryID-1][personIndex]
         noInifiteLoop += 1
     
-    print(f"New Person ID {personInfo['ID']}")
+    # print(f"New Person ID {personInfo['ID']}")
     
     personURL = peopleImageURLS[int(personInfo['ID']) - 1]
     person = randomizePerson(Person(personURL, personInfo, batch=peopleBatch), config['windowwidth'], config['windowheight'])
@@ -153,6 +179,15 @@ def pickActiveCategory():
     oldCategory = activeCategory
     while oldCategory == activeCategory:
         activeCategory = random.randint(1, 6)
+
+def startCatchAnim(person):
+    return
+    sprite = pyglet.sprite.Sprite(catchAnim, x=person.x, y=person.y, anchor_x='center', anchor_y='center', batch=peopleBatch)
+    color = categories[person.category-1]['Color']
+    print(color)
+    sprite.color = (color[0], color[1], color[2])
+
+
 
 
 

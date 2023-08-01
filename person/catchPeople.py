@@ -7,4 +7,4 @@ def personInArea(person, area):
     return position in area
 
 def personInAnyArea(person, areas):
-    return person.catchable and any([personInArea(person, area) for area in areas])
+    return (not person.caught) and any([personInArea(person, area) for area in areas])
