@@ -125,7 +125,7 @@ def gameLoop(dt):
     scores = (currentScore, dayHighScore, conferenceHighScore)
     drawTable.drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
 
-    caughtPeople = catchPeople(activePeople, catchAreas)
+    caughtPeople = catchPeople(activePeople, catchAreas, activeCategory)
     if caughtPeople:
         print(caughtPeople)
         for p in caughtPeople:
@@ -175,6 +175,7 @@ def spawnPerson(dt):
         return
     
     categoryID = random.randint(1, 6)
+    categoryID = activeCategory if random.randint(1,3) == 1 else categoryID
     numOptions = len(peopleInfo[categoryID-1])
     personIndex = random.randint(0, numOptions-1)
     personInfo = peopleInfo[categoryID-1][personIndex]
