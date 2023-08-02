@@ -20,6 +20,9 @@ categories = readCategories('assets/categories.csv')
 
 # people images
 peopleImageURLS = sorted(glob.glob('assets/people/*.png'))
+for i, url in enumerate(peopleImageURLS):
+    peopleImageURLS[i] = url.replace('\\', '/')
+
 peopleImages = [pyglet.resource.image(url) for url in peopleImageURLS]
 numTotalPeople = len(peopleImageURLS)
 for p in peopleImages:
@@ -28,32 +31,43 @@ for p in peopleImages:
 
 
 # catch animation
-catchAnimSourceFrames = [pyglet.resource.image(f) for f in sorted(glob.glob('assets/Caught-it_circle_anim/*.png'))]
+catchAnimSourceURLS = sorted(glob.glob('assets/Caught-it_circle_anim/*.png'))
+for i, url in enumerate(catchAnimSourceURLS):
+    catchAnimSourceURLS[i] = url.replace('\\', '/') 
+
+catchAnimSourceFrames = [pyglet.resource.image(url) for url in catchAnimSourceURLS]
+
 for f in catchAnimSourceFrames:
     f.anchor_x = f.width // 2
     f.anchor_y = f.height // 2
 catchAnimSource = pyglet.image.Animation.from_image_sequence(catchAnimSourceFrames, duration=0.01, loop=False)
 
-
 # background animation
-frames = [pyglet.resource.image(f) for f in sorted(glob.glob('assets/Background animation/*.jpg'))]
+backgroundURLS = sorted(glob.glob('assets/Background animation/*.png'))
+for i, url in enumerate(backgroundURLS):
+    backgroundURLS[i] = url.replace('\\', '/')
+
+frames = [pyglet.resource.image(f) for f in backgroundURLS]
 backgroundSource = pyglet.image.Animation.from_image_sequence(frames, duration=0.1)
 backgroundAnim = pyglet.sprite.Sprite(img=backgroundSource)
 backgroundAnim.scale = config['backgroundscale']
 
 # table stars animation
-tableStarFrames = [pyglet.resource.image(f) for f in sorted(glob.glob('assets/Star_animation/*.jpg'))]
+tableStarURLS = sorted(glob.glob('assets/Star_animation/*.jpg'))
+for i, url in enumerate(tableStarURLS):
+    tableStarURLS[i] = url.replace('\\', '/')
+
+tableStarFrames = [pyglet.resource.image(f) for f in tableStarURLS]
 for f in tableStarFrames:
     f.anchor_x = f.width // 2
     f.anchor_y = f.height // 2
 tableStarAnim = pyglet.image.Animation.from_image_sequence(tableStarFrames, duration=0.3)
 tableStarSprite = pyglet.sprite.Sprite(tableStarAnim, x=config['windowwidth']//2, y=config['windowheight']//2)
 
-
 discRadius = config['disctowindowratio'] * config['windowwidth'] * 0.5
 
 
-window = pyglet.window.Window(width=config['windowwidth'], height=config['windowheight'])
+window = pyglet.window.Window(width=int(config['windowwidth']), height=int(config['windowheight']))
 pyglet.gl.glClearColor(0.3, 0.3, 0.3, 1)
 
 catcher = pyglet.shapes.Circle(0, 0, radius=discRadius)
