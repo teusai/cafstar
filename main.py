@@ -20,7 +20,7 @@ categories = readCategories('assets/categories.csv')
 print('Loading assets')
 
 # people images
-peopleImageURLS = sorted(glob.glob('assets/people_new/*.png'))
+peopleImageURLS = sorted(glob.glob('assets/people/*.png'))
 for i, url in enumerate(peopleImageURLS):
     peopleImageURLS[i] = url.replace('\\', '/')
 
