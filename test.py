@@ -42,12 +42,13 @@ backgroundAnim = pyglet.sprite.Sprite(img=backgroundSource)
 backgroundAnim.scale = config['backgroundscale']
 
 # table stars animation
-tableStarFrames = [pyglet.resource.image(f) for f in sorted(glob.glob('assets/Star_animation/*.jpg'))]
+tableStarFrames = [pyglet.resource.image(f) for f in sorted(glob.glob('assets/Star_animation/*-transparent.png'))]
 for f in tableStarFrames:
     f.anchor_x = f.width // 2
     f.anchor_y = f.height // 2
 tableStarAnim = pyglet.image.Animation.from_image_sequence(tableStarFrames, duration=0.3)
 tableStarSprite = pyglet.sprite.Sprite(tableStarAnim, x=config['windowwidth']//2, y=config['windowheight']//2)
+tableStarSprite.scale = (config['windowwidth'] * config['tabletowindowratio']) / tableStarSprite.width
 
 
 discRadius = config['disctowindowratio'] * config['windowwidth'] * 0.5
@@ -122,7 +123,7 @@ def gameLoop(dt):
     
     peopleBatch.draw()
     scores = (currentScore, dayHighScore, conferenceHighScore)
-    drawTable.drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1])
+    drawTable.drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
 
     caughtPeople = catchPeople(activePeople, catchAreas)
     if caughtPeople:
@@ -161,7 +162,10 @@ def gameWait(dt):
     window.clear()
     backgroundAnim.draw()
     scores = (currentScore, dayHighScore, conferenceHighScore)
-    drawTable.drawGameOver(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores)
+    if remainingTime > config['gamewaittime'] / 2:
+        drawTable.drawGameOver(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, tableStarSprite)
+    else:
+        drawTable.drawStartScreen(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], tableStarSprite)
     remainingTime -= dt
 
 
