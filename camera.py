@@ -55,29 +55,21 @@ def startStream(config, pipeline):       # Start streaming
 def getFrames(pipeline, depth, color):
    depth_image = 0
    color_image = 0
+   got_frame = False
 
-   try:
-        # Wait for a coherent pair of frames: depth and color
-        while(True):
-           frames = pipeline.wait_for_frames()
-           if depth == True:
-              depth_frame = frames.get_depth_frame()
-           if color == True:
-              color_frame = frames.get_color_frame()
+   frames = pipeline.poll_for_frames()
+   if frames.is_frame():
+      got_frame = True
+      if depth == True:
+         depth_frame = frames.get_depth_frame()
+         depth_image = np.asanyarray(depth_frame.get_data())
+         depth_image = np.flipud(depth_image)
+      if color == True:
+         color_frame = frames.get_color_frame()
+         color_image = np.asanyarray(color_frame.get_data())
+         color_image = np.flipud(color_image)
 
-           if (depth and not depth_frame) or (color and not color_frame):
-               continue
-           else:
-               break
-
-        # Convert images to numpy arrays
-        if depth:
-           depth_image = np.asanyarray(depth_frame.get_data())
-        if color:
-           color_image = np.asanyarray(color_frame.get_data())
-        return depth_image, color_image
-   finally:
-        depth_image, color_image
+   return got_frame, depth_image, color_image
 
 def stopStreaming(pipeline):
    pipeline.stop()

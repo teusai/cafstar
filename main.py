@@ -20,15 +20,18 @@ categories = readCategories('assets/categories.csv')
 print('Loading assets')
 
 # people images
-peopleImageURLS = sorted(glob.glob('assets/people/*.png'))
+peopleImageURLS = sorted(glob.glob('assets/people_new/*.png'))
 for i, url in enumerate(peopleImageURLS):
     peopleImageURLS[i] = url.replace('\\', '/')
 
 peopleImages = [pyglet.resource.image(url) for url in peopleImageURLS]
 numTotalPeople = len(peopleImageURLS)
 for i, p in enumerate(peopleImages):
+    p.width = 1200
+    p.height = 1200
     p.anchor_x = p.width // 2
     p.anchor_y = p.height // 2
+    
 print('Loaded people images')
 
 
@@ -131,23 +134,23 @@ def gameLoop(dt):
     
     depth_image = 0
     color_image = 0
-
-    depth_image, color_image = camera.getFrames(pipeline, depth, color)
-    depth_image = np.flipud(depth_image)
-
-    depth_image[depth_image > config['depthclipmax']] = 0
-    depth_image[depth_image < config['depthclipmin']] = 0
-    depth_image[depth_image > 0] = 65535
-
-    circleList, depth_colormap = camera.getCircles(depth_image, config['mincircledistance'], config['detectp1'], config['detectp2'], int(config['minradius']), int(config['maxradius']))
-
-    # camera.cv2.imshow('RealSense', depth_colormap)
-
     catchAreas = [catcher]
-    for xyr in circleList:
-        center = (int(xyr[0]) * 1.875, int(xyr[1] * 1.40625))
-        radius = int(xyr[2] * 1.6)
-        catchAreas.append(pyglet.shapes.Circle(center[0], center[1], radius, color=(200, 200, 40)))
+    
+    got_frame, depth_image, color_image = camera.getFrames(pipeline, depth, color)
+
+    if got_frame == True:
+        depth_image[depth_image > config['depthclipmax']] = 0
+        depth_image[depth_image < config['depthclipmin']] = 0
+        depth_image[depth_image > 0] = 65535
+
+        circleList, depth_colormap = camera.getCircles(depth_image, config['mincircledistance'], config['detectp1'], config['detectp2'], int(config['minradius']), int(config['maxradius']))
+
+        # camera.cv2.imshow('RealSense', depth_colormap)
+        
+        for xyr in circleList:
+            center = (int(xyr[0]) * 1.5, int(xyr[1] * 1.5))
+            radius = int(xyr[2] * 1.5)
+            catchAreas.append(pyglet.shapes.Circle(center[0], center[1], radius, color=(200, 200, 40)))
 
     backgroundAnim.draw()
     for area in catchAreas:
