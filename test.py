@@ -11,29 +11,44 @@ import utils.drawTable as drawTable
 import highscores
 
 import gc
-import os
+
 
 
 config = readConfig('cafstar.cfg')
 peopleInfo = readInfo('assets/people-info-id-ordered.csv')
 categories = readCategories('assets/categories.csv')
-peopleImageURLS = sorted(glob.glob('assets/people/*.png'))
-numTotalPeople = len(peopleImageURLS)
-catchAnim = pyglet.image.Animation.from_image_sequence(
-    pyglet.image.ImageGrid(
-        pyglet.resource.image("resources/anim_star1_6x6_255sq_00000.png"),
-        rows=6, columns=6
-    ),
-    duration=0.1
-)
 
-# backgroundPlayer = pyglet.media.Player()
-# backgroundPlayer.loop = True
-# background = pyglet.media.load('assets/' + config['backgroundfilename'])
-# backgroundPlayer.queue(background)
-# print(backgroundPlayer.source)
-# print(f'FFMPEG? {pyglet.media.have_ffmpeg()}')
-bg = pyglet.resource.image("assets/" + config['backgroundfilename'])
+# people images
+peopleImageURLS = sorted(glob.glob('assets/people/*.png'))
+peopleImages = [pyglet.resource.image(url) for url in peopleImageURLS]
+numTotalPeople = len(peopleImageURLS)
+for p in peopleImages:
+    p.anchor_x = p.width // 2
+    p.anchor_y = p.height // 2
+
+
+# catch animation
+catchAnimSourceFrames = [pyglet.resource.image(f) for f in sorted(glob.glob('assets/Caught-it_circle_anim/*.png'))]
+for f in catchAnimSourceFrames:
+    f.anchor_x = f.width // 2
+    f.anchor_y = f.height // 2
+catchAnimSource = pyglet.image.Animation.from_image_sequence(catchAnimSourceFrames, duration=0.01, loop=False)
+
+
+# background animation
+frames = [pyglet.resource.image(f) for f in sorted(glob.glob('assets/Background animation/*.jpg'))]
+backgroundSource = pyglet.image.Animation.from_image_sequence(frames, duration=0.1)
+backgroundAnim = pyglet.sprite.Sprite(img=backgroundSource)
+backgroundAnim.scale = config['backgroundscale']
+
+# table stars animation
+tableStarFrames = [pyglet.resource.image(f) for f in sorted(glob.glob('assets/Star_animation/*.jpg'))]
+for f in tableStarFrames:
+    f.anchor_x = f.width // 2
+    f.anchor_y = f.height // 2
+tableStarAnim = pyglet.image.Animation.from_image_sequence(tableStarFrames, duration=0.3)
+tableStarSprite = pyglet.sprite.Sprite(tableStarAnim, x=config['windowwidth']//2, y=config['windowheight']//2)
+
 
 discRadius = config['disctowindowratio'] * config['windowwidth'] * 0.5
 
@@ -50,6 +65,7 @@ def on_mouse_motion(x, y, dx, dy):
     catcher.y = y
 
 
+
 activePeople = []
 usedPeople = set()
 peopleBatch = pyglet.graphics.Batch()
@@ -57,13 +73,12 @@ dayHighScore = 0
 conferenceHighScore = 0
 currentScore = 0
 activeCategory = 1
-catchAreas = [pyglet.shapes.Circle(x=400, y=300, radius=discRadius), catcher]
+catchAreas = [catcher]
 remainingTime = config['gametimelimit']
 
 
 def gameReset(dt):
     pyglet.clock.unschedule(gameWait)
-    # backgroundPlayer.play()
     global activePeople, usedPeople, currentScore, dayHighScore, conferenceHighScore, remainingTime, peopleBatch
     for p in activePeople:
         p.despawn()
@@ -101,7 +116,7 @@ def gameLoop(dt):
     # if backgroundPlayer.source and backgroundPlayer.source.video_format:
     #     print('video exists and stuff')
     #     backgroundPlayer.texture.blit(0,0)
-    bg.blit(0,0)
+    backgroundAnim.draw()
     for area in catchAreas:
         area.draw()
     
@@ -144,7 +159,7 @@ def gameEnd(dt):
 def gameWait(dt):
     global remainingTime
     window.clear()
-    bg.blit(0,0)
+    backgroundAnim.draw()
     scores = (currentScore, dayHighScore, conferenceHighScore)
     drawTable.drawGameOver(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores)
     remainingTime -= dt
@@ -168,8 +183,8 @@ def spawnPerson(dt):
     
     # print(f"New Person ID {personInfo['ID']}")
     
-    personURL = peopleImageURLS[int(personInfo['ID']) - 1]
-    person = randomizePerson(Person(personURL, personInfo, batch=peopleBatch), config['windowwidth'], config['windowheight'])
+    personImage = peopleImages[int(personInfo['ID']) - 1]
+    person = randomizePerson(Person(personImage, personInfo, batch=peopleBatch), config['windowwidth'], config['windowheight'])
     person.setHandler(activePeople)
     
 
@@ -183,8 +198,9 @@ def pickActiveCategory():
         activeCategory = random.randint(1, 6)
 
 def startCatchAnim(person):
-    return
-    sprite = pyglet.sprite.Sprite(catchAnim, x=person.x, y=person.y, anchor_x='center', anchor_y='center', batch=peopleBatch)
+    sprite = pyglet.sprite.Sprite(catchAnimSource, x=person.x, y=person.y, batch=peopleBatch)
+    sprite.anchor_x = 'center'
+    sprite.anchor_y = 'center'
     color = categories[person.category-1]['Color']
     print(color)
     sprite.color = (color[0], color[1], color[2])

@@ -5,8 +5,8 @@ import re
 
 
 class Person(pyglet.sprite.Sprite):
-    def __init__(self, filename, info, *args, **kwargs):
-        img = self.__get_img(filename)
+    def __init__(self, img, info, *args, **kwargs):
+        # img = self.__get_img(filename)
         super().__init__(img, *args, **kwargs)
 
         self.info = info
@@ -14,7 +14,7 @@ class Person(pyglet.sprite.Sprite):
         self.vx = 0
         self.vy = 0
         self.rotSpeed = random.uniform(10.0, 60.0) * (-1 if random.randint(0, 1) == 1 else 1)
-        self.scale = random.randint(8, 12) / 100.0
+        self.scale = random.randint(16, 24) / 100.0
 
         self.timeLimit = 10
         self.timeUp = False
