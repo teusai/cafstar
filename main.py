@@ -9,7 +9,7 @@ from utils.readInfo import readInfo
 from utils.readCategories import readCategories
 import utils.drawTable as drawTable
 import highscores
-
+# import camera
 import gc
 
 
@@ -28,7 +28,7 @@ numTotalPeople = len(peopleImageURLS)
 for p in peopleImages:
     p.anchor_x = p.width // 2
     p.anchor_y = p.height // 2
-
+print('Loaded people images')
 
 # catch animation
 catchAnimSourceURLS = sorted(glob.glob('assets/Caught-it_circle_anim/*.png'))
@@ -41,6 +41,7 @@ for f in catchAnimSourceFrames:
     f.anchor_x = f.width // 2
     f.anchor_y = f.height // 2
 catchAnimSource = pyglet.image.Animation.from_image_sequence(catchAnimSourceFrames, duration=0.01, loop=False)
+print('Loaded catch animations')
 
 # background animation
 backgroundURLS = sorted(glob.glob('assets/Background animation/*.png'))
@@ -51,6 +52,7 @@ frames = [pyglet.resource.image(f) for f in backgroundURLS]
 backgroundSource = pyglet.image.Animation.from_image_sequence(frames, duration=0.1)
 backgroundAnim = pyglet.sprite.Sprite(img=backgroundSource)
 backgroundAnim.scale = config['backgroundscale']
+print('Loaded background animations')
 
 # table stars animation
 tableStarURLS = sorted(glob.glob('assets/Star_animation/*-transparent.png'))
@@ -64,6 +66,7 @@ for f in tableStarFrames:
 tableStarAnim = pyglet.image.Animation.from_image_sequence(tableStarFrames, duration=0.3)
 tableStarSprite = pyglet.sprite.Sprite(tableStarAnim, x=config['windowwidth']//2, y=config['windowheight']//2)
 tableStarSprite.scale = (config['windowwidth'] * config['tabletowindowratio']) / tableStarSprite.width
+print('Loaded table stars')
 
 discRadius = config['disctowindowratio'] * config['windowwidth'] * 0.5
 
@@ -78,8 +81,6 @@ def on_mouse_motion(x, y, dx, dy):
     global catcher
     catcher.x = x
     catcher.y = y
-
-
 
 activePeople = []
 usedPeople = set()
@@ -142,7 +143,7 @@ def gameLoop(dt):
 
     caughtPeople = catchPeople(activePeople, catchAreas, activeCategory)
     if caughtPeople:
-        print(caughtPeople)
+        # print(caughtPeople)
         for p in caughtPeople:
             p.timeLimit = 0
             p.caught = True
@@ -222,13 +223,8 @@ def startCatchAnim(person):
     sprite.anchor_x = 'center'
     sprite.anchor_y = 'center'
     color = categories[person.category-1]['Color']
-    print(color)
+    # print(color)
     sprite.color = (color[0], color[1], color[2])
-
-
-
-
-
 
 gameReset(0)
 pyglet.app.run(config['framerate'])
