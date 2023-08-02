@@ -122,7 +122,16 @@ def gameLoop(dt):
     window.clear()
     global remainingTime, currentScore
 
-
+    if remainingTime < 0:
+        print("game ended")
+        return
+    
+    # print("game looping")
+    # backgroundImage.blit(0, 0)
+    # if backgroundPlayer.source and backgroundPlayer.source.video_format:
+    #     print('video exists and stuff')
+    #     backgroundPlayer.texture.blit(0,0)
+    
     backgroundAnim.draw()
     for area in catchAreas:
         area.draw()
@@ -181,6 +190,7 @@ def spawnPerson(dt):
         return
     
     categoryID = random.randint(1, 6)
+    categoryID = activeCategory if random.randint(1,3) == 1 else categoryID
     numOptions = len(peopleInfo[categoryID-1])
     personIndex = random.randint(0, numOptions-1)
     personInfo = peopleInfo[categoryID-1][personIndex]
