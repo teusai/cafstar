@@ -37,8 +37,10 @@ def setConfig(depth, color):                          # Configure depth and colo
        exit(0)
 
    if depth == True:
-      config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
-
+      if device_product_line == 'L500':
+         config.enable_stream(rs.stream.depth, 1024, 768, rs.format.z16, 30)
+      else:
+         config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
    if color == True:
       if device_product_line == 'L500':
           config.enable_stream(rs.stream.color, 960, 540, rs.format.bgr8, 30)

@@ -9,14 +9,15 @@ from utils.readInfo import readInfo
 from utils.readCategories import readCategories
 import utils.drawTable as drawTable
 import highscores
-# import camera
+import camera
+import numpy as np
 import gc
-
-
 
 config = readConfig('cafstar.cfg')
 peopleInfo = readInfo('assets/people-info-id-ordered.csv')
 categories = readCategories('assets/categories.csv')
+
+print('Loading assets')
 
 # people images
 peopleImageURLS = sorted(glob.glob('assets/people/*.png'))
@@ -25,10 +26,11 @@ for i, url in enumerate(peopleImageURLS):
 
 peopleImages = [pyglet.resource.image(url) for url in peopleImageURLS]
 numTotalPeople = len(peopleImageURLS)
-for p in peopleImages:
+for i, p in enumerate(peopleImages):
     p.anchor_x = p.width // 2
     p.anchor_y = p.height // 2
 print('Loaded people images')
+
 
 # catch animation
 catchAnimSourceURLS = sorted(glob.glob('assets/Caught-it_circle_anim/*.png'))
@@ -44,7 +46,7 @@ catchAnimSource = pyglet.image.Animation.from_image_sequence(catchAnimSourceFram
 print('Loaded catch animations')
 
 # background animation
-backgroundURLS = sorted(glob.glob('assets/Background animation/*.png'))
+backgroundURLS = sorted(glob.glob('assets/Background animation/*.jpg'))
 for i, url in enumerate(backgroundURLS):
     backgroundURLS[i] = url.replace('\\', '/')
 
@@ -127,12 +129,26 @@ def gameLoop(dt):
         print("game ended")
         return
     
-    # print("game looping")
-    # backgroundImage.blit(0, 0)
-    # if backgroundPlayer.source and backgroundPlayer.source.video_format:
-    #     print('video exists and stuff')
-    #     backgroundPlayer.texture.blit(0,0)
-    
+    depth_image = 0
+    color_image = 0
+
+    depth_image, color_image = camera.getFrames(pipeline, depth, color)
+    depth_image = np.flipud(depth_image)
+
+    depth_image[depth_image > config['depthclipmax']] = 0
+    depth_image[depth_image < config['depthclipmin']] = 0
+    depth_image[depth_image > 0] = 65535
+
+    circleList, depth_colormap = camera.getCircles(depth_image, config['mincircledistance'], config['detectp1'], config['detectp2'], int(config['minradius']), int(config['maxradius']))
+
+    # camera.cv2.imshow('RealSense', depth_colormap)
+
+    catchAreas = [catcher]
+    for xyr in circleList:
+        center = (int(xyr[0]) * 1.875, int(xyr[1] * 1.40625))
+        radius = int(xyr[2] * 1.6)
+        catchAreas.append(pyglet.shapes.Circle(center[0], center[1], radius, color=(200, 200, 40)))
+
     backgroundAnim.draw()
     for area in catchAreas:
         area.draw()
@@ -226,5 +242,14 @@ def startCatchAnim(person):
     # print(color)
     sprite.color = (color[0], color[1], color[2])
 
+depth = True
+color = False
+camera_config, pipeline = camera.setConfig(depth, color)
+camera.startStream(camera_config, pipeline)
+
+testest = 123451
+
 gameReset(0)
 pyglet.app.run(config['framerate'])
+
+camera.stopStreaming(pipeline)
