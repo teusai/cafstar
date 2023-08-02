@@ -122,15 +122,7 @@ def gameLoop(dt):
     window.clear()
     global remainingTime, currentScore
 
-    if remainingTime < 0:
-        print("game ended")
-        return
 
-    # print("game looping")
-    # backgroundImage.blit(0, 0)
-    # if backgroundPlayer.source and backgroundPlayer.source.video_format:
-    #     print('video exists and stuff')
-    #     backgroundPlayer.texture.blit(0,0)
     backgroundAnim.draw()
     for area in catchAreas:
         area.draw()
@@ -139,7 +131,7 @@ def gameLoop(dt):
     scores = (currentScore, dayHighScore, conferenceHighScore)
     drawTable.drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
 
-    caughtPeople = catchPeople(activePeople, catchAreas)
+    caughtPeople = catchPeople(activePeople, catchAreas, activeCategory)
     if caughtPeople:
         print(caughtPeople)
         for p in caughtPeople:
