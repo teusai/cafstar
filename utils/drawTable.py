@@ -19,8 +19,8 @@ def drawScoreboard(width, height, ratio, scores, gameTime, category, image=None)
 
     table = pyglet.shapes.Circle(center_x, center_y, radius=radius, color=(0, 0, 0, 255))
 
-    time = pyglet.text.Label("Time", color=fontColor, font_name=font, font_size=mainFontSize, x=center_x, y=center_y+(radius*0.8), anchor_x='center', anchor_y='center', batch=batch)
-    remaining = pyglet.text.Label("Remaining:", color=fontColor, font_name=font, font_size=mainFontSize, x=center_x, y=center_y+(radius*0.7), anchor_x='center', anchor_y='center', batch=batch)
+    time = pyglet.text.Label("Time", color=fontColor, font_name=font, font_size=mainFontSize, x=center_x, y=center_y+(radius*0.85), anchor_x='center', anchor_y='center', batch=batch)
+    remaining = pyglet.text.Label("Remaining:", color=fontColor, font_name=font, font_size=mainFontSize, x=center_x, y=center_y+(radius*0.75), anchor_x='center', anchor_y='center', batch=batch)
     timeLabel = pyglet.text.Label(f"{int(gameTime)}", color=fontColor, font_name=font, font_size=numberFontSize, x=center_x, y=center_y+(radius*0.45), anchor_x='center', anchor_y='center', batch=batch)
     boxWidth = numberFontSize * 3
     boxHeight = numberFontSize * 3
@@ -30,8 +30,8 @@ def drawScoreboard(width, height, ratio, scores, gameTime, category, image=None)
     catch = pyglet.text.Label("Catch:", font_name=font, font_size=mainFontSize, color=fontColor, x=center_x, y=center_y+(radius*0.18), anchor_x='center', anchor_y='center', batch=batch)
     boxWidth = radius * 1.8
     boxHeight = radius * 0.2
-    catchBorder = pyglet.shapes.BorderedRectangle(x=center_x-(boxWidth//2), y=center_y-(boxHeight//2), width=boxWidth, height=boxHeight, border=6, color=(0,0,0), border_color=borderColor, batch=batch)
-    catchLabel = pyglet.text.Label(category["Name"], color=category["Color"], font_name=font, font_size=mainFontSize, x=center_x, y=center_y, anchor_x='center', anchor_y="center", batch=batch)
+    catchBorder = pyglet.shapes.BorderedRectangle(x=center_x-(boxWidth//2), y=center_y-(boxHeight//2), width=boxWidth, height=boxHeight, border=6, color=category["Color"], border_color=borderColor, batch=batch)
+    catchLabel = pyglet.text.Label(category["Name"], color=(255,255,255,255), font_name=font, font_size=mainFontSize, x=center_x, y=center_y, anchor_x='center', anchor_y="center", batch=batch)
 
     
     yourScore = pyglet.text.Label("Your Score: ", color=fontColor, font_name=font, font_size=mainFontSize, x=center_x, y=center_y-(radius*0.18), anchor_x='center', anchor_y='center', batch=batch)

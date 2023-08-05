@@ -63,7 +63,10 @@ def getFrames(pipeline, depth, color):
       if depth == True:
          depth_frame = frames.get_depth_frame()
          depth_image = np.asanyarray(depth_frame.get_data())
+         depth_image = depth_image[185:480, 365:900]
+         depth_image = cv2.resize(depth_image, (1280, 720))
          depth_image = np.flipud(depth_image)
+         
       if color == True:
          color_frame = frames.get_color_frame()
          color_image = np.asanyarray(color_frame.get_data())
@@ -108,40 +111,42 @@ if __name__ == "__main__":
    cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
 
    for i in range(5000):
-        depth_image, color_image = getFrames(pipeline, depth, color)   # returns numpy arrays
-        depth_image = np.fliplr(depth_image)
-                
-        depth_image[depth_image > 3300] = 0    	# 14' ceiling = 4,267 mm from floor.  Clear pixels > 3,300 mm from camera
-        depth_image[depth_image < 2200] = 0	# clear pixels < 2,200 from camera
-        depth_image = 2 * depth_image    # if the environment is clean and there are no false positives then scale up the depth image so the data in range has higher contrast.  This improves circle detection.
+        got_frame, depth_image, color_image = getFrames(pipeline, depth, color)   # returns numpy arrays
+        
+        if got_frame == True:
+         depth_image = np.fliplr(depth_image)
+                  
+         depth_image[depth_image > 4000] = 0    	# 14' ceiling = 4,267 mm from floor.  Clear pixels > 3,300 mm from camera
+         depth_image[depth_image < 3300] = 0	# clear pixels < 2,200 from camera
+         depth_image = 2 * depth_image    # if the environment is clean and there are no false positives then scale up the depth image so the data in range has higher contrast.  This improves circle detection.
 
-        cL, depth_colormap = getCircles(depth_image, 200, 102, 16, 15, 50)
+         cL, depth_colormap = getCircles(depth_image, 200, 102, 16, 15, 50)
 
-        for xyr in cL:
-           #print(xyr[0], xyr[1], xyr[2])
-           center = (int(xyr[0]), int(xyr[1]))
-           radius = int(xyr[2])
-           cv2.circle(depth_colormap, center, radius, (0,255,255), 30)    # draw the outer circle
-           if center[0] < 1280 and center[1] < 720:
-              print(center, radius, depth_image[center[1], center[0]])
+         for xyr in cL:
+            #print(xyr[0], xyr[1], xyr[2])
+            center = (int(xyr[0]), int(xyr[1]))
+            radius = int(xyr[2])
+            cv2.circle(depth_colormap, center, radius, (0,255,255), 30)    # draw the outer circle
+            if center[0] < 1280 and center[1] < 720:
+               print(center, radius, depth_image[center[1], center[0]])
 
-        if depth and color:
-           depth_colormap_dim = depth_colormap.shape
-           color_colormap_dim = color_image.shape
+         if depth and color:
+            depth_colormap_dim = depth_colormap.shape
+            color_colormap_dim = color_image.shape
 
-           # If depth and color resolutions are different, resize color image to match depth image for display
-           if depth_colormap_dim != color_colormap_dim:
-               resized_color_image = cv2.resize(color_image, dsize=(depth_colormap_dim[1], depth_colormap_dim[0]), interpolation=cv2.INTER_AREA)
-               images = np.hstack((depth_colormap, resized_color_image))
-           else:
-               images = np.hstack((depth_colormap, color_image))
-        elif depth:
-            images = depth_colormap
-        elif color:
-            images = color_image
+            # If depth and color resolutions are different, resize color image to match depth image for display
+            if depth_colormap_dim != color_colormap_dim:
+                  resized_color_image = cv2.resize(color_image, dsize=(depth_colormap_dim[1], depth_colormap_dim[0]), interpolation=cv2.INTER_AREA)
+                  images = np.hstack((depth_colormap, resized_color_image))
+            else:
+                  images = np.hstack((depth_colormap, color_image))
+         elif depth:
+               images = depth_colormap
+         elif color:
+               images = color_image
 
-        # Show images
-        cv2.imshow('RealSense', images)
+         # Show images
+         cv2.imshow('RealSense', images)
         cv2.waitKey(1)
 
    stopStreaming(pipeline)

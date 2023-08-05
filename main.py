@@ -27,8 +27,8 @@ for i, url in enumerate(peopleImageURLS):
 peopleImages = [pyglet.resource.image(url) for url in peopleImageURLS]
 numTotalPeople = len(peopleImageURLS)
 for i, p in enumerate(peopleImages):
-    p.width = 1200
-    p.height = 1200
+    p.width = 800
+    p.height = 800
     p.anchor_x = p.width // 2
     p.anchor_y = p.height // 2
     
@@ -76,7 +76,7 @@ print('Loaded table stars')
 discRadius = config['disctowindowratio'] * config['windowwidth'] * 0.5
 
 
-window = pyglet.window.Window(width=int(config['windowwidth']), height=int(config['windowheight']))
+window = pyglet.window.Window(width=int(config['windowwidth']), height=int(config['windowheight']), style='borderless')
 pyglet.gl.glClearColor(0.3, 0.3, 0.3, 1)
 
 catcher = pyglet.shapes.Circle(0, 0, radius=discRadius)
