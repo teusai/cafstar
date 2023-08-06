@@ -181,7 +181,7 @@ def on_refresh(dt):
     remainingTime -= dt
 
 
-def gameReset():
+def gameReset(dt):
     global gameState, DrawTable, activePeople, usedPeople, currentScore, dayHighScore, conferenceHighScore, remainingTime, catchAnimBatch
     
     gameState = 1
@@ -208,7 +208,7 @@ def gameReset():
     pyglet.clock.schedule_interval(spawnPerson, config['personspawnrate'])
     pyglet.clock.schedule_once(gameEnd, config['gametimelimit'])
 
-def gameEnd():
+def gameEnd(dt):
     print("game ended")
     global gameState, remainingTime
     gameState = 0
@@ -251,7 +251,7 @@ def pickActiveCategory():
 
 camera.startStream(camera_config, pipeline)
 
-gameReset()
+gameReset(0)
 pyglet.app.run(config['framerate'])
 
 camera.stopStreaming(pipeline)
