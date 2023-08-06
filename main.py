@@ -148,9 +148,6 @@ def on_refresh(dt):
         # for catcher in catcherList:
         #     catcherCircles.append(pyglet.shapes.Circle(catcher[0], catcher[1], catcher[2], color=(200, 200, 40), batch=loopBatch))
 
-        scores = (currentScore, dayHighScore, conferenceHighScore)
-        DrawTable.drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
-
         activeSprites = []
         for activePerson in activePeople:
             activeSprites.append(pyglet.sprite.Sprite(peopleImages[int(activePerson.info['ID'])-1], x=activePerson.x, y=activePerson.y, batch=loopBatch))
@@ -178,6 +175,9 @@ def on_refresh(dt):
                     currentScore += 1
                     pickActiveCategory()
         
+        scores = (currentScore, dayHighScore, conferenceHighScore)
+        DrawTable.drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
+
         loopBatch.draw()
         catchAnimBatch.draw()
 
