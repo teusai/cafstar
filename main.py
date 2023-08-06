@@ -94,18 +94,19 @@ activeCategory = 1
 
 DrawTable = drawTable.DrawTable(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
 catcherMouse = [0, 0, discRadius]
-catcherList = [catcherMouse]
+# catcherList = [catcherMouse]
+catcherList = []
 catchAnimBatch = pyglet.graphics.Batch()
 
 depth = True
 color = False
 camera_config, pipeline = camera.setConfig(depth, color)
 
-@window.event
-def on_mouse_motion(x, y, dx, dy):
-    global catcherMouse
-    catcherMouse[0] = x
-    catcherMouse[1] = y
+# @window.event
+# def on_mouse_motion(x, y, dx, dy):
+#     global catcherMouse
+#     catcherMouse[0] = x
+#     catcherMouse[1] = y
 
 @window.event
 def on_refresh(dt):
@@ -123,13 +124,14 @@ def on_refresh(dt):
         
         depth_image = 0
         color_image = 0
-        catcherList = [catcherMouse]
+        # catcherList = [catcherMouse]
+        catcherList = []
         
         got_frame, depth_image, color_image = camera.getFrames(pipeline, depth, color)
 
         if got_frame == True:
             depth_image[depth_image > config['depthclipmax']] = 0
-            # depth_image[depth_image < config['depthclipmin']] = 0
+            depth_image[depth_image < config['depthclipmin']] = 0
             depth_image[depth_image > 0] = 65535
 
             circleList, depth_colormap = camera.getCircles(depth_image, config['mincircledistance'], config['detectp1'], config['detectp2'], int(config['minradius']), int(config['maxradius']))
@@ -142,9 +144,10 @@ def on_refresh(dt):
                 newCatcher = [center[0], center[1], radius]
                 catcherList.append(newCatcher)
 
-        for catcher in catcherList:
-            circle = pyglet.shapes.Circle(catcher[0], catcher[1], catcher[2], color=(200, 200, 40), batch=loopBatch)
-        
+        # catcherCircles = []
+        # for catcher in catcherList:
+        #     catcherCircles.append(pyglet.shapes.Circle(catcher[0], catcher[1], catcher[2], color=(200, 200, 40), batch=loopBatch))
+
         scores = (currentScore, dayHighScore, conferenceHighScore)
         DrawTable.drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
 
@@ -160,7 +163,7 @@ def on_refresh(dt):
             #         activePerson.bounce(bounding)
             activePerson.step(dt)
         
-        caughtPeople = catchPeople(activePeople, catcherList, activeCategory, config['catchdistance'])
+        caughtPeople = catchPeople(activePeople, catcherList, activeCategory, config['catchdistance'], config['windowwidth'], config['windowheight'])
         if caughtPeople:
             # print(caughtPeople)
             caughtSprites = []

@@ -63,7 +63,9 @@ def getFrames(pipeline, depth, color):
       if depth == True:
          depth_frame = frames.get_depth_frame()
          depth_image = np.asanyarray(depth_frame.get_data())
-         depth_image = depth_image[185:480, 365:900]
+         depth_image[depth_image > 3800] = 0
+         depth_image[depth_image < 3200] = 0
+         depth_image = depth_image[230:525, 470:1000]
          depth_image = cv2.resize(depth_image, (1280, 720))
          depth_image = np.flipud(depth_image)
          
@@ -81,11 +83,12 @@ def getCircles(depth_image, minDist, p1, p2, Rmin, Rmax):
    circleL = []
 
    # Apply colormap on depth image (image must be converted to 8-bit per pixel first)
-   depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_BONE)
+   depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=1), cv2.COLORMAP_BONE)
 
    grayImg = cv2.cvtColor(depth_colormap, cv2.COLOR_BGR2GRAY)
-   # grayImg = cv2.blur(grayImg, (3,3)) # probably won't need this
+   grayImg = cv2.blur(grayImg, (3,3)) # probably won't need this
 
+   # depth_colormap = grayImg
    dp = 1.		# ratio of input image to accumulator
    #minDist = 200	# between detected circles
    #p1 = 102		# currently 102, increasing detects fewer circles
@@ -116,8 +119,8 @@ if __name__ == "__main__":
         if got_frame == True:
          depth_image = np.fliplr(depth_image)
                   
-         depth_image[depth_image > 4000] = 0    	# 14' ceiling = 4,267 mm from floor.  Clear pixels > 3,300 mm from camera
-         depth_image[depth_image < 3300] = 0	# clear pixels < 2,200 from camera
+         depth_image[depth_image > 3900] = 0    	# 14' ceiling = 4,267 mm from floor.  Clear pixels > 3,300 mm from camera
+         depth_image[depth_image < 3200] = 0	# clear pixels < 2,200 from camera
          depth_image = 2 * depth_image    # if the environment is clean and there are no false positives then scale up the depth image so the data in range has higher contrast.  This improves circle detection.
 
          cL, depth_colormap = getCircles(depth_image, 200, 102, 16, 15, 50)
