@@ -19,6 +19,8 @@ categories = readCategories('assets/categories.csv')
 
 print('Loading assets')
 
+peopleImageSize = 800
+
 # people images
 peopleImageURLS = sorted(glob.glob('assets/people/*.png'))
 for i, url in enumerate(peopleImageURLS):
@@ -27,13 +29,12 @@ for i, url in enumerate(peopleImageURLS):
 peopleImages = [pyglet.resource.image(url) for url in peopleImageURLS]
 numTotalPeople = len(peopleImageURLS)
 for i, p in enumerate(peopleImages):
-    p.width = 800
-    p.height = 800
+    p.width = peopleImageSize
+    p.height = peopleImageSize
     p.anchor_x = p.width // 2
     p.anchor_y = p.height // 2
     
 print('Loaded people images: ' + str(len(peopleImages)))
-
 
 # catch animation
 catchAnimSourceURLS = sorted(glob.glob('assets/Caught-it_circle_anim/*.png'))
@@ -77,42 +78,125 @@ discRadius = config['disctowindowratio'] * config['windowwidth'] * 0.5
 
 
 window = pyglet.window.Window(width=int(config['windowwidth']), height=int(config['windowheight']), style='borderless')
-pyglet.gl.glClearColor(0.3, 0.3, 0.3, 1)
+# window = pyglet.window.Window(width=800, height=600)
 
-catcher = pyglet.shapes.Circle(0, 0, radius=discRadius)
-
-@window.event
-def on_mouse_motion(x, y, dx, dy):
-    global catcher
-    catcher.x = x
-    catcher.y = y
+gameState = 0
 
 activePeople = []
 usedPeople = set()
-peopleBatch = pyglet.graphics.Batch()
-dayHighScore = 0
-conferenceHighScore = 0
+
 currentScore = 0
-activeCategory = 1
-catchAreas = [catcher]
+dayHighScore, conferenceHighScore = highscores.getHighScores()
+scores = (currentScore, dayHighScore, conferenceHighScore)
+
 remainingTime = config['gametimelimit']
+activeCategory = 1
+
+DrawTable = drawTable.DrawTable(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
+catcherMouse = [0, 0, discRadius]
+catcherList = [catcherMouse]
+catchAnimBatch = pyglet.graphics.Batch()
+
+depth = True
+color = False
+camera_config, pipeline = camera.setConfig(depth, color)
+
+@window.event
+def on_mouse_motion(x, y, dx, dy):
+    global catcherMouse
+    catcherMouse[0] = x
+    catcherMouse[1] = y
+
+@window.event
+def on_refresh(dt):
+    global remainingTime, currentScore, dayHighScore, conferenceHighScore, catcherList, catcherMouse, depth, color
+    window.clear()
+    backgroundAnim.draw()
+    if gameState == 0:
+        scores = (currentScore, dayHighScore, conferenceHighScore)
+        if remainingTime > config['gamewaittime'] / 2:
+            DrawTable.drawGameOver(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, tableStarSprite)
+        else:
+            DrawTable.drawStartScreen(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], tableStarSprite)
+    elif gameState == 1:
+        loopBatch = pyglet.graphics.Batch()
+        
+        depth_image = 0
+        color_image = 0
+        catcherList = [catcherMouse]
+        
+        got_frame, depth_image, color_image = camera.getFrames(pipeline, depth, color)
+
+        if got_frame == True:
+            depth_image[depth_image > config['depthclipmax']] = 0
+            # depth_image[depth_image < config['depthclipmin']] = 0
+            depth_image[depth_image > 0] = 65535
+
+            circleList, depth_colormap = camera.getCircles(depth_image, config['mincircledistance'], config['detectp1'], config['detectp2'], int(config['minradius']), int(config['maxradius']))
+
+            # camera.cv2.imshow('RealSense', depth_colormap)
+            
+            for xyr in circleList:
+                center = (int(xyr[0]) * 1.5, int(xyr[1] * 1.5))
+                radius = xyr[2] * 1.5
+                newCatcher = [center[0], center[1], radius]
+                catcherList.append(newCatcher)
+
+        for catcher in catcherList:
+            circle = pyglet.shapes.Circle(catcher[0], catcher[1], catcher[2], color=(200, 200, 40), batch=loopBatch)
+        
+        scores = (currentScore, dayHighScore, conferenceHighScore)
+        DrawTable.drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
+
+        activeSprites = []
+        for activePerson in activePeople:
+            activeSprites.append(pyglet.sprite.Sprite(peopleImages[int(activePerson.info['ID'])-1], x=activePerson.x, y=activePerson.y, batch=loopBatch))
+            activeSprites[-1].rotation = activePerson.rotation
+            activeSprites[-1].opacity = activePerson.opacity
+            activeSprites[-1].scale = activePerson.scale
+            # bounding = activePerson.outOfBounds(config['windowwidth'], config['windowheight'])
+            # if bounding:
+            #     if activePerson.vx * bounding[0] < 0 or activePerson.vy * bounding[1] < 0:
+            #         activePerson.bounce(bounding)
+            activePerson.step(dt)
+        
+        caughtPeople = catchPeople(activePeople, catcherList, activeCategory, config['catchdistance'])
+        if caughtPeople:
+            # print(caughtPeople)
+            caughtSprites = []
+            for caughtPerson in caughtPeople:
+                if caughtPerson.category == activeCategory:
+                    caughtPerson.timeLimit = 0
+                    caughtPerson.caught = True
+                    caughtSprites.append(pyglet.sprite.Sprite(catchAnimSource, x=caughtPerson.x, y=caughtPerson.y, batch=catchAnimBatch))
+                    color = categories[caughtPerson.category-1]['Color']
+                    caughtSprites[-1].color = (color[0], color[1], color[2])
+                    
+                    currentScore += 1
+                    pickActiveCategory()
+        
+        loopBatch.draw()
+        catchAnimBatch.draw()
+
+    remainingTime -= dt
 
 
-def gameReset(dt):
-    global DrawTable
+def gameReset():
+    global gameState, DrawTable, activePeople, usedPeople, currentScore, dayHighScore, conferenceHighScore, remainingTime, catchAnimBatch
+    
+    gameState = 1
 
-    pyglet.clock.unschedule(gameWait)
-    global activePeople, usedPeople, currentScore, dayHighScore, conferenceHighScore, remainingTime, peopleBatch
     for p in activePeople:
         p.despawn()
     del activePeople
     del usedPeople
-    del peopleBatch
+    del catchAnimBatch
+    catchAnimBatch = pyglet.graphics.Batch()
+    
     activePeople = []
     usedPeople = set()
-    peopleBatch = pyglet.graphics.Batch()
+    
     currentScore = 0
-    dayHighScore, conferenceHighScore = highscores.getHighScores()
     remainingTime = config['gametimelimit']
 
     print(gc.get_count())
@@ -121,96 +205,20 @@ def gameReset(dt):
 
     pickActiveCategory()
 
-    pyglet.clock.schedule_interval(gameLoop, config['framerate'])
     pyglet.clock.schedule_interval(spawnPerson, config['personspawnrate'])
     pyglet.clock.schedule_once(gameEnd, config['gametimelimit'])
 
-    scores = (currentScore, dayHighScore, conferenceHighScore)
-    DrawTable = drawTable.DrawTable(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
-
-
-def gameLoop(dt):
-    window.clear()
-    global remainingTime, currentScore
-
-    if remainingTime < 0:
-        print("game ended")
-        return
-    
-    depth_image = 0
-    color_image = 0
-    catchAreas = [catcher]
-    
-    got_frame, depth_image, color_image = camera.getFrames(pipeline, depth, color)
-
-    if got_frame == True:
-        depth_image[depth_image > config['depthclipmax']] = 0
-        depth_image[depth_image < config['depthclipmin']] = 0
-        depth_image[depth_image > 0] = 65535
-
-        circleList, depth_colormap = camera.getCircles(depth_image, config['mincircledistance'], config['detectp1'], config['detectp2'], int(config['minradius']), int(config['maxradius']))
-
-        # camera.cv2.imshow('RealSense', depth_colormap)
-        
-        for xyr in circleList:
-            center = (int(xyr[0]) * 1.5, int(xyr[1] * 1.5))
-            radius = int(xyr[2] * 1.5)
-            catchAreas.append(pyglet.shapes.Circle(center[0], center[1], radius, color=(200, 200, 40)))
-
-    backgroundAnim.draw()
-    for area in catchAreas:
-        area.draw()
-    
-    peopleBatch.draw()
-    scores = (currentScore, dayHighScore, conferenceHighScore)
-    DrawTable.drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
-
-    caughtPeople = catchPeople(activePeople, catchAreas, activeCategory)
-    if caughtPeople:
-        # print(caughtPeople)
-        for p in caughtPeople:
-            p.timeLimit = 0
-            p.caught = True
-            if p.category == activeCategory:
-                startCatchAnim(p)
-                currentScore += 1
-                pickActiveCategory()
-
-
-    for person in activePeople:
-        # bounding = person.outOfBounds(config['windowwidth'], config['windowheight'])
-        # if bounding:
-        #     if person.vx * bounding[0] < 0 or person.vy * bounding[1] < 0:
-        #         person.bounce(bounding)
-        person.step(dt)
-    
-    
-    remainingTime -= dt
-
-
-def gameEnd(dt):
-    pyglet.clock.unschedule(gameLoop)
-    pyglet.clock.unschedule(spawnPerson)
-    highscores.logHighScore(currentScore)
-    global remainingTime
+def gameEnd():
+    print("game ended")
+    global gameState, remainingTime
+    gameState = 0
     remainingTime = config['gamewaittime']
-    pyglet.clock.schedule_interval(gameWait, config['framerate'])
+    highscores.logHighScore(currentScore)
+    pyglet.clock.unschedule(spawnPerson)
     pyglet.clock.schedule_once(gameReset, config['gamewaittime'])
 
-def gameWait(dt):
-    global remainingTime
-    window.clear()
-    backgroundAnim.draw()
-    scores = (currentScore, dayHighScore, conferenceHighScore)
-    if remainingTime > config['gamewaittime'] / 2:
-        drawTable.drawGameOver(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, tableStarSprite)
-    else:
-        drawTable.drawStartScreen(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], tableStarSprite)
-    remainingTime -= dt
-
-
 def spawnPerson(dt):
-    global activePeople, usedPeople
+    global activePeople, usedPeople, peopleImageSize
     if len(activePeople) >= config['maximumpeople']:
         return
     
@@ -228,13 +236,11 @@ def spawnPerson(dt):
     
     # print(f"New Person ID {personInfo['ID']}")
     
-    personImage = peopleImages[int(personInfo['ID']) - 1]
-    person = randomizePerson(Person(personImage, personInfo, batch=peopleBatch), config['windowwidth'], config['windowheight'])
+    person = randomizePerson(Person(personIndex, personInfo), config['windowwidth'], config['windowheight'])
     person.setHandler(activePeople)
-    
-
     activePeople.append(person)
     usedPeople.add(int(personInfo['ID']))
+    # print(len(activePeople))
 
 def pickActiveCategory():
     global activeCategory
@@ -242,20 +248,10 @@ def pickActiveCategory():
     while oldCategory == activeCategory:
         activeCategory = random.randint(1, 6)
 
-def startCatchAnim(person):
-    sprite = pyglet.sprite.Sprite(catchAnimSource, x=person.x, y=person.y, batch=peopleBatch)
-    sprite.anchor_x = 'center'
-    sprite.anchor_y = 'center'
-    color = categories[person.category-1]['Color']
-    # print(color)
-    sprite.color = (color[0], color[1], color[2])
 
-depth = True
-color = False
-camera_config, pipeline = camera.setConfig(depth, color)
 camera.startStream(camera_config, pipeline)
 
-gameReset(0)
+gameReset()
 pyglet.app.run(config['framerate'])
 
 camera.stopStreaming(pipeline)

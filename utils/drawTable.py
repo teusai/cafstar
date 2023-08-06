@@ -14,7 +14,7 @@ class DrawTable():
 
         self.sBatch = pyglet.graphics.Batch()
 
-        self.table = table = pyglet.shapes.Circle(center_x, center_y, radius=radius, color=(0, 0, 0, 255), batch=self.sBatch)
+        self.table = pyglet.shapes.Circle(center_x, center_y, radius=radius, color=(0, 0, 0, 255), batch=self.sBatch)
         self.time = pyglet.text.Label("Time", color=fontColor, font_name=font, font_size=mainFontSize, x=center_x, y=center_y+(radius*0.85), anchor_x='center', anchor_y='center', batch=self.sBatch)
         boxWidth = numberFontSize * 3
         boxHeight = numberFontSize * 3
