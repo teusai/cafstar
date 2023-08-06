@@ -32,7 +32,7 @@ for i, p in enumerate(peopleImages):
     p.anchor_x = p.width // 2
     p.anchor_y = p.height // 2
     
-print('Loaded people images')
+print('Loaded people images: ' + str(len(peopleImages)))
 
 
 # catch animation
@@ -54,7 +54,7 @@ for i, url in enumerate(backgroundURLS):
     backgroundURLS[i] = url.replace('\\', '/')
 
 frames = [pyglet.resource.image(f) for f in backgroundURLS]
-backgroundSource = pyglet.image.Animation.from_image_sequence(frames, duration=0.1)
+backgroundSource = pyglet.image.Animation.from_image_sequence(frames, duration=0.04)
 backgroundAnim = pyglet.sprite.Sprite(img=backgroundSource)
 backgroundAnim.scale = config['backgroundscale']
 print('Loaded background animations')
@@ -99,6 +99,8 @@ remainingTime = config['gametimelimit']
 
 
 def gameReset(dt):
+    global DrawTable
+
     pyglet.clock.unschedule(gameWait)
     global activePeople, usedPeople, currentScore, dayHighScore, conferenceHighScore, remainingTime, peopleBatch
     for p in activePeople:
@@ -122,6 +124,9 @@ def gameReset(dt):
     pyglet.clock.schedule_interval(gameLoop, config['framerate'])
     pyglet.clock.schedule_interval(spawnPerson, config['personspawnrate'])
     pyglet.clock.schedule_once(gameEnd, config['gametimelimit'])
+
+    scores = (currentScore, dayHighScore, conferenceHighScore)
+    DrawTable = drawTable.DrawTable(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
 
 
 def gameLoop(dt):
@@ -158,7 +163,7 @@ def gameLoop(dt):
     
     peopleBatch.draw()
     scores = (currentScore, dayHighScore, conferenceHighScore)
-    drawTable.drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
+    DrawTable.drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
 
     caughtPeople = catchPeople(activePeople, catchAreas, activeCategory)
     if caughtPeople:
@@ -249,8 +254,6 @@ depth = True
 color = False
 camera_config, pipeline = camera.setConfig(depth, color)
 camera.startStream(camera_config, pipeline)
-
-testest = 123451
 
 gameReset(0)
 pyglet.app.run(config['framerate'])

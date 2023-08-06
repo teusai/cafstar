@@ -84,7 +84,7 @@ def getCircles(depth_image, minDist, p1, p2, Rmin, Rmax):
    depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_BONE)
 
    grayImg = cv2.cvtColor(depth_colormap, cv2.COLOR_BGR2GRAY)
-   grayImg = cv2.blur(grayImg, (3,3))
+   # grayImg = cv2.blur(grayImg, (3,3)) # probably won't need this
 
    dp = 1.		# ratio of input image to accumulator
    #minDist = 200	# between detected circles
