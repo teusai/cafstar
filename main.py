@@ -174,12 +174,12 @@ def on_refresh(dt):
                     
                     currentScore += 1
                     pickActiveCategory()
-        
-        scores = (currentScore, dayHighScore, conferenceHighScore)
-        DrawTable.drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
 
         loopBatch.draw()
         catchAnimBatch.draw()
+
+        scores = (currentScore, dayHighScore, conferenceHighScore)
+        DrawTable.drawScoreboard(config['windowwidth'], config['windowheight'], config['tabletowindowratio'], scores, remainingTime, categories[activeCategory-1], tableStarSprite)
 
     remainingTime -= dt
 
