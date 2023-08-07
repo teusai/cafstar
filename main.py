@@ -200,6 +200,7 @@ def gameReset(dt):
     usedPeople = set()
     
     currentScore = 0
+    dayHighScore, conferenceHighScore = highscores.getHighScores()
     remainingTime = config['gametimelimit']
 
     print(gc.get_count())
