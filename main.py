@@ -160,20 +160,20 @@ def on_refresh(dt):
             #         activePerson.bounce(bounding)
             activePerson.step(dt)
         
-        caughtPeople = catchPeople(activePeople, catcherList, activeCategory, config['catchdistance'], config['windowwidth'], config['windowheight'])
+        caughtPeople = catchPeople(activePeople, catcherList, config['catchdistance'], config['windowwidth'], config['windowheight'])
         if caughtPeople:
             # print(caughtPeople)
             caughtSprites = []
             for caughtPerson in caughtPeople:
+                caughtPerson.timeLimit = 0
+                caughtPerson.caught = True
+                currentScore += 1
                 if caughtPerson.category == activeCategory:
-                    caughtPerson.timeLimit = 0
-                    caughtPerson.caught = True
                     caughtSprites.append(pyglet.sprite.Sprite(catchAnimSource, x=caughtPerson.x, y=caughtPerson.y, batch=catchAnimBatch))
                     color = categories[caughtPerson.category-1]['Color']
                     caughtSprites[-1].color = (color[0], color[1], color[2])
-                    
                     currentScore += 1
-                    pickActiveCategory()
+                pickActiveCategory()
 
         loopBatch.draw()
         catchAnimBatch.draw()
